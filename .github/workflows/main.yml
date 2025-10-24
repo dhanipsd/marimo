@@ -1,0 +1,59 @@
+name: Docker Build and Publish and Deploy to DeployAja
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: dhanipsd/marimo
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -f docker/Dockerfile -t $REGISTRY/$IMAGE_NAME:latest .
+          docker tag $REGISTRY/$IMAGE_NAME:latest $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+
+
+      - name: Push Docker image
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME:latest
+          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+
+      - name: DeployAja Plan
+        uses: deployaja/deployaja-cli@v0.0.15
+        with:
+          command: plan
+          api-token: ${{ secrets.DEPLOYAJA_TOKEN }}
+
+      - name: DeployAja Deploy
+        uses: deployaja/deployaja-cli@v0.0.15
+        with:
+          command: deploy
+          api-token: ${{ secrets.DEPLOYAJA_TOKEN }}
+          additional-args: >
+            --set container.image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: DeployAja Status
+        uses: deployaja/deployaja-cli@v0.0.15
+        with:
+          command: status
+          api-token: ${{ secrets.DEPLOYAJA_TOKEN }}

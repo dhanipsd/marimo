@@ -1,0 +1,12 @@
+name: marimo
+version: 1.0.0
+description: Marimo - interactive Python notebooks in your browser
+container:
+  image: ghcr.io/dhanipsd/marimo:latest
+  port: 7860
+resources:
+  cpu: 500m
+  memory: 512Mi
+  replicas: 1
+env: []
+domain: marimo.deployaja.id
