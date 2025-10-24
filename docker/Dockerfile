@@ -19,7 +19,7 @@ RUN uv pip install --no-cache-dir marimo==${marimo_version} && \
 COPY --chown=appuser:appuser marimo/_tutorials tutorials
 RUN rm -rf tutorials/__init__.py
 
-ENV PORT=8080
+ENV PORT=7860
 EXPOSE $PORT
 
 ENV HOST=0.0.0.0
