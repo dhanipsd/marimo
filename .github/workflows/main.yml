@@ -12,14 +12,18 @@ env:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+
+    # 👇 This part is essential — gives permission to push images to GHCR
     permissions:
       contents: read
       packages: write
 
     steps:
+      # 🧱 Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 🔐 Step 2: Log in to GitHub Container Registry (GHCR)
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -27,23 +31,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # 🐳 Step 3: Build Docker image (from docker/Dockerfile)
       - name: Build Docker image
         run: |
           docker build -f docker/Dockerfile -t $REGISTRY/$IMAGE_NAME:latest .
           docker tag $REGISTRY/$IMAGE_NAME:latest $REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
-
+      # 🚀 Step 4: Push Docker image to GHCR
       - name: Push Docker image
         run: |
           docker push $REGISTRY/$IMAGE_NAME:latest
           docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
+      # 🧩 Step 5: DeployAja Plan
       - name: DeployAja Plan
         uses: deployaja/deployaja-cli@v0.0.15
         with:
           command: plan
           api-token: ${{ secrets.DEPLOYAJA_TOKEN }}
 
+      # 🚀 Step 6: DeployAja Deploy
       - name: DeployAja Deploy
         uses: deployaja/deployaja-cli@v0.0.15
         with:
@@ -52,6 +59,7 @@ jobs:
           additional-args: >
             --set container.image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
+      # 🔍 Step 7: Check deployment status
       - name: DeployAja Status
         uses: deployaja/deployaja-cli@v0.0.15
         with:
